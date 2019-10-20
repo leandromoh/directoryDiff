@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using MoreLinq;
 
 namespace helloworld
 {
@@ -63,26 +61,5 @@ namespace helloworld
                 .GetFiles(dir, "*.*", SearchOption.AllDirectories)
                 .Select(x => new FileInfo(x))
                 .ToArray();
-
-        public static IEnumerable<TSource> IntersectBy<TSource, TKey>(
-            this IEnumerable<TSource> first,
-            IEnumerable<TSource> second,
-            Func<TSource, TKey> keySelector,
-            IEqualityComparer<TKey> keyComparer = null)
-        {
-
-            keyComparer = keyComparer ?? EqualityComparer<TKey>.Default;
-
-            var keys = new HashSet<TKey>(keyComparer);
-            foreach (var item in first)
-            {
-                var k = keySelector(item);
-                if (keys.Add(k))
-                {
-                    yield return item;
-                    keys.Remove(k);
-                }
-            }
-        }
     }
 }
