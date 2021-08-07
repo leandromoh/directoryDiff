@@ -1,65 +1,60 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using ConsoleTables;
 
-namespace helloworld
+var dirsToCompare = new []
 {
-    static class Program
-    {
-        static void Main(string[] args)
-        {
-            var dirA = @"C:\Users\leandro\Dropbox";
-            var dirB = @"F:\Dropbox";
+    @"C:\Users\leandro\Desktop\backuped-hd-externo\fotos",
+    @"H:\files\fotos",
+};
 
-            var filesA = GetFilesFrom(dirA);
-            var filesB = GetFilesFrom(dirB);
-
-            var getRelativeNameA = (Func<FileInfo, string>) (f => f.FullName.Substring(dirA.Length));
-            var getRelativeNameB = (Func<FileInfo, string>) (f => f.FullName.Substring(dirB.Length));
-
-            var relativeNamesA = filesA.Select(getRelativeNameA);
-            var relativeNamesB = filesB.Select(getRelativeNameB);
-
-            var onlyInA = relativeNamesA.Except(relativeNamesB);
-            var onlyInB = relativeNamesB.Except(relativeNamesA);
-
-            var existInBoth = relativeNamesA.Intersect(relativeNamesB);
-
-            var dicA = filesA.ToDictionary(getRelativeNameA, f => f.Length);
-            var dicB = filesB.ToDictionary(getRelativeNameB, f => f.Length);
-
-            Console.WriteLine("------------------------");
-            Console.WriteLine("exists only in A");
-            foreach(var file in onlyInA)
-            {
-                Console.WriteLine(file);
-            }
-
-            Console.WriteLine("------------------------");
-            Console.WriteLine("exists only in B");
-            foreach(var file in onlyInB)
-            {
-                Console.WriteLine(file);
-            }
-
-            Console.WriteLine("------------------------");
-            Console.WriteLine("exists in both but having different lengths");
-            foreach(var file in existInBoth)
-            {
-                var lengthA = dicA[file];
-                var lengthB = dicB[file];
-
-                if (lengthA != lengthB)
+var filesByDir = dirsToCompare
+                .ToDictionary(path => path, path => 
                 {
-                    Console.WriteLine($"{file} | length in A = {lengthA} | length B = {lengthB}");
-                }
-            }
-        }
+                    var files = GetFilesFrom(path);
+                    var fileInfoByRelativeName = files
+                        .ToDictionary(f => f.FullName.Substring(path.Length));
+                        
+                    return fileInfoByRelativeName;
+                });
 
-        public static FileInfo[] GetFilesFrom(string dir) =>
-            Directory
-                .GetFiles(dir, "*.*", SearchOption.AllDirectories)
-                .Select(x => new FileInfo(x))
-                .ToArray();
+var allFileNames = filesByDir
+                .SelectMany(x => x.Value)
+                .Select(x => x.Key)
+                .Distinct()
+                .ToList();
+
+ var table = new ConsoleTable(dirsToCompare.Prepend("File").ToArray());
+
+foreach (var fileName in allFileNames)
+{
+    var lengths = dirsToCompare
+        .Select(rootDirName => 
+        {
+            var localFiles = filesByDir[rootDirName];
+            var fileLength = localFiles.TryGetValue(fileName, out var fileInfo)
+                                ? fileInfo.Length
+                                : (long?) null;
+
+            return fileLength;
+        })
+        .ToArray();
+
+    var allEquals = lengths.Distinct().Count() == 1;
+
+    if (allEquals is false)
+    {
+        var values = lengths.Cast<object>().Prepend(fileName).ToArray();
+        table.AddRow(values);
     }
 }
+
+table.Write();
+Console.Read();
+
+FileInfo[] GetFilesFrom(string dir) =>
+    Directory
+        .GetFiles(dir, "*.*", SearchOption.AllDirectories)
+        .Select(x => new FileInfo(x))
+        .ToArray();
