@@ -1,13 +1,20 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ConsoleTables;
 
-var dirsToCompare = new []
+var dirsToCompare = new List<string>();
+
+var path = string.Empty;
+
+Console.WriteLine("Digite ou cole os diretorios, um por linha.. vazio para encerrar");
+
+while (string.IsNullOrWhiteSpace(path = Console.ReadLine()) == false)
 {
-    @"C:\Users\leandro\Desktop\backuped-hd-externo\fotos",
-    @"H:\files\fotos",
-};
+    dirsToCompare.Add(path);
+}
+
 
 var filesByDir = dirsToCompare
                 .ToDictionary(path => path, path => 
